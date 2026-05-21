@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG — Forge ton Empire</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:#c9a84c;--gold-l:#e8c97a;--gold-d:#8a6d2f;
+  --crimson:#8b1a1a;--bg:#0a0a0a;--panel:#131313;--panel2:#1a1a1a;
+  --border:#2a2016;--text:#d4c89a;--muted:#7a6e54;
+  --green:#2ecc71;--green-d:#1a7a42;--blue:#2980b9;--purple:#8e44ad;
+  --lup:#f1c40f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:"IM Fell English",serif;min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(139,26,26,.1) 0%,transparent 50%),
+  radial-gradient(ellipse at 80% 100%,rgba(201,168,76,.06) 0%,transparent 50%);}
+
+/* ── ONBOARDING OVERLAY ── */
+#onboarding{position:fixed;inset:0;background:#0a0a0a;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;
+  background-image:radial-gradient(ellipse at 50% 20%,rgba(139,26,26,.15) 0%,transparent 60%);}
+#onboarding.hidden{display:none}
+.ob-logo{font-family:"Cinzel Decorative",cursive;font-size:clamp(20px,5vw,36px);color:var(--gold-l);text-align:center;margin-bottom:6px;text-shadow:0 0 40px rgba(201,168,76,.3)}
+.ob-sub{font-style:italic;color:var(--muted);font-size:14px;text-align:center;margin-bottom:30px}
+.chatbox{width:100%;max-width:560px;background:var(--panel);border:1px solid var(--border);border-top:2px solid var(--gold-d);padding:0;display:flex;flex-direction:column;height:60vh;max-height:480px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:4px}.chat-messages::-webkit-scrollbar-thumb{background:var(--gold-d)}
+.msg{max-width:85%;padding:10px 14px;font-size:13px;line-height:1.6;animation:fadeIn .3s ease}
+.msg.bot{background:var(--panel2);border:1px solid var(--border);border-radius:0 8px 8px 8px;align-self:flex-start;color:var(--text)}
+.msg.user{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);border-radius:8px 0 8px 8px;align-self:flex-end;color:var(--gold-l)}
+.msg.typing{color:var(--muted);font-style:italic}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-input-row{display:flex;border-top:1px solid var(--border);background:var(--panel2)}
+.chat-input{flex:1;background:transparent;border:none;outline:none;padding:12px 16px;color:var(--text);font-family:"IM Fell English",serif;font-size:13px;resize:none}
+.chat-input::placeholder{color:var(--muted)}
+.chat-send{background:var(--gold-d);border:none;color:var(--bg);padding:12px 18px;cursor:pointer;font-family:"Cinzel",serif;font-size:12px;letter-spacing:1px;transition:background .2s}
+.chat-send:hover{background:var(--gold)}
+.ob-skip{margin-top:12px;font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--muted);cursor:pointer;letter-spacing:2px;text-decoration:underline}
+.ob-skip:hover{color:var(--gold)}
+.ob-status{font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:1px}
+.api-key-row{display:flex;gap:8px;margin-bottom:12px;width:100%;max-width:560px}
+.api-input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;font-family:"Share Tech Mono",monospace;font-size:11px;outline:none}
+.api-input:focus{border-color:var(--gold-d)}
+.api-btn{background:var(--gold-d);border:none;color:var(--bg);padding:10px 16px;cursor:pointer;font-family:"Cinzel",serif;font-size:11px;letter-spacing:1px}
+.api-note{font-size:11px;color:var(--muted);font-style:italic;text-align:center;margin-bottom:10px;max-width:560px}
+
+/* ── MAIN APP ── */
+.page{max-width:960px;margin:0 auto;padding:20px}
+.header{text-align:center;padding:26px 0 16px;border-bottom:2px solid var(--gold-d);margin-bottom:20px;position:relative}
+.header::before,.header::after{content:"⚔";color:var(--gold);font-size:18px;position:absolute;top:50%;transform:translateY(-26px)}
+.header::before{left:0}.header::after{right:0}
+.title-class{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:4px;color:var(--gold-d);margin-bottom:5px}
+.char-name{font-family:"Cinzel Decorative",cursive;font-size:clamp(24px,6vw,44px);color:var(--gold-l);text-shadow:0 0 30px rgba(201,168,76,.3);letter-spacing:2px}
+.char-subtitle{font-style:italic;color:var(--muted);font-size:13px;margin-top:4px}
+
+/* ── LEVEL BAR ── */
+.level-block{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-top:2px solid var(--gold-d);padding:12px 16px;margin-bottom:18px}
+.level-badge{background:var(--gold-d);border:2px solid var(--gold);color:var(--bg);font-family:"Cinzel",serif;font-weight:600;font-size:20px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 15px rgba(201,168,76,.3);transition:all .5s}
+.level-info{flex:1}
+.level-label{font-size:10px;letter-spacing:3px;color:var(--muted);font-family:"Share Tech Mono",monospace;margin-bottom:3px}
+.xp-bar-wrap{background:#111;border:1px solid var(--border);height:12px;overflow:hidden;position:relative}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--green-d),var(--green));transition:width .8s cubic-bezier(.4,0,.2,1)}
+.xp-text{font-size:10px;color:var(--muted);font-family:"Share Tech Mono",monospace;margin-top:2px}
+.level-title{font-family:"Cinzel",serif;font-size:12px;color:var(--gold);flex-shrink:0;max-width:130px;text-align:right;line-height:1.3;transition:color .5s}
+
+/* XP CAP WARNING */
+.cap-warning{background:rgba(139,26,26,.2);border:1px solid rgba(139,26,26,.4);padding:8px 14px;font-family:"Share Tech Mono",monospace;font-size:10px;color:#e74c3c;letter-spacing:1px;margin-bottom:12px;text-align:center;display:none}
+.cap-warning.show{display:block}
+
+/* ── HERO ── */
+.hero-layout{display:grid;grid-template-columns:200px 1fr;gap:18px;margin-bottom:20px;align-items:start}
+@media(max-width:600px){.hero-layout{grid-template-columns:1fr}}
+.char-wrap{position:relative;width:200px}
+.char-aura{position:absolute;inset:-12px;border-radius:50%;pointer-events:none;transition:opacity 1.2s}
+#charSvg{width:200px;height:300px;display:block;transition:filter 1.2s}
+.particles{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.particle{position:absolute;border-radius:50%;animation:floatUp linear infinite;opacity:0}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}90%{opacity:.6}100%{transform:translateY(-160px) scale(0);opacity:0}}
+.char-status{text-align:center;margin-top:6px;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;padding:3px 8px;border:1px solid;display:inline-block;width:100%;transition:all .8s}
+.stats-side{display:flex;flex-direction:column}
+.section-title{font-family:"Cinzel",serif;font-size:10px;letter-spacing:4px;color:var(--gold-d);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold-d),transparent)}
+.cstat-line{margin-bottom:8px}
+.cstat-head{display:flex;justify-content:space-between;margin-bottom:2px}
+.cstat-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.cstat-val{font-family:"Cinzel",serif;font-size:11px;color:var(--gold-l)}
+.cstat-track{height:6px;background:#111;border:1px solid #222;overflow:hidden}
+.cstat-fill{height:100%;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);margin:10px 0}
+.state-box{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold-d);padding:10px 12px;margin-top:8px}
+.state-box-title{font-family:"Cinzel",serif;font-size:12px;color:var(--gold-l);margin-bottom:4px}
+.state-box-body{font-style:italic;font-size:11px;color:var(--muted);line-height:1.6}
+.emotion-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.emotion-chip{font-size:10px;padding:2px 6px;background:rgba(201,168,76,.06);border:1px solid var(--border);font-family:"Share Tech Mono",monospace;color:var(--muted);transition:all .6s}
+.emotion-chip.active{color:var(--gold);border-color:var(--gold-d);background:rgba(201,168,76,.14)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{font-family:"Cinzel",serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:8px 10px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap}
+.tab:hover{color:var(--gold)}.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ── OBJECTIFS PERIODS ── */
+.period-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:480px){.period-grid{grid-template-columns:1fr}}
+.period-card{background:var(--panel);border:1px solid var(--border);padding:12px;text-align:center}
+.period-card.gold-border{border-top:2px solid var(--gold)}
+.period-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.period-val{font-family:"Cinzel",serif;font-size:22px;color:var(--gold-l);margin-bottom:3px}
+.period-sub{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:8px}
+.period-bar-wrap{background:#111;height:6px;overflow:hidden}
+.period-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));transition:width .6s}
+.period-xp{font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--green);margin-top:4px}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+@media(max-width:500px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--panel);border:1px solid var(--border);padding:10px;text-align:center}
+.stat-icon{font-size:18px;margin-bottom:2px;display:block}
+.stat-name{font-size:9px;letter-spacing:2px;color:var(--muted);font-family:"Share Tech Mono",monospace;text-transform:uppercase;margin-bottom:4px}
+.stat-bar-wrap{background:#1a1a1a;border:1px solid #222;height:6px;margin-bottom:3px;overflow:hidden}
+.stat-bar-fill{height:100%;transition:width 1s}
+.stat-value{font-family:"Cinzel",serif;font-size:14px;color:var(--gold-l);font-weight:600}
+
+/* ── QUESTS ── */
+.quest-card{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);padding:12px 14px;margin-bottom:8px}
+.quest-card.secondary{border-left-color:var(--blue)}
+.quest-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.quest-name{font-family:"Cinzel",serif;font-size:13px;color:var(--gold-l)}
+.quest-card.secondary .quest-name{color:#5dade2}
+.quest-badge{font-family:"Share Tech Mono",monospace;font-size:9px;padding:2px 6px;background:rgba(201,168,76,.15);border:1px solid var(--gold-d);color:var(--gold);flex-shrink:0;letter-spacing:1px}
+.quest-card.secondary .quest-badge{background:rgba(41,128,185,.15);border-color:#1a5c7a;color:#5dade2}
+.quest-desc{font-style:italic;color:var(--muted);font-size:12px;margin-bottom:7px;line-height:1.5}
+.quest-progress-wrap{display:flex;align-items:center;gap:8px}
+.quest-progress-bar{flex:1;background:#1a1a1a;border:1px solid #222;height:6px;overflow:hidden}
+.quest-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));transition:width .8s}
+.quest-card.secondary .quest-progress-fill{background:linear-gradient(90deg,#1a5c7a,var(--blue))}
+.quest-pct{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--gold);width:30px;text-align:right}
+
+/* ── DAILY ── */
+.date-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.date-btn{background:var(--panel);border:1px solid var(--border);color:var(--gold);font-size:18px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:"Cinzel",serif}
+.date-btn:hover{background:rgba(201,168,76,.1)}
+.date-display{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--muted);flex:1;text-align:center;text-transform:uppercase;letter-spacing:2px}
+.habit-category{font-family:"Cinzel",serif;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;padding:6px 0 3px}
+.habit-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);margin-bottom:4px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none}
+.habit-row:hover{background:rgba(201,168,76,.04)}
+.habit-row.done{background:rgba(46,204,113,.06);border-color:rgba(46,204,113,.25)}
+.habit-row.capped{opacity:.5;cursor:not-allowed}
+.habit-check{width:18px;height:18px;border:2px solid var(--border);background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;transition:all .2s}
+.habit-row.done .habit-check{border-color:var(--green);background:rgba(46,204,113,.15);color:var(--green)}
+.habit-icon{font-size:14px;flex-shrink:0}
+.habit-name{flex:1;font-size:13px;line-height:1.3;transition:color .2s}
+.habit-row.done .habit-name{color:var(--muted);text-decoration:line-through}
+.habit-xp{font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--green);flex-shrink:0}
+.habit-row.done .habit-xp{opacity:.5}
+.day-summary{background:var(--panel);border:1px solid var(--border);border-top:2px solid var(--gold-d);padding:14px;margin-top:12px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.summary-label{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:2px}
+.summary-val{font-family:"Cinzel",serif;font-size:15px;color:var(--gold-l)}
+.summary-bar-wrap{background:#1a1a1a;height:9px;border:1px solid #222;overflow:hidden;margin-bottom:5px}
+.summary-bar-fill{height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold));transition:width .6s}
+.day-grade{font-family:"Cinzel Decorative",cursive;font-size:28px;text-align:center;padding:6px 0;transition:color .4s}
+.day-verdict{text-align:center;font-style:italic;font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── DÉFIS ── */
+.defi-card{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--purple);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+.defi-card.done{border-left-color:var(--green);background:rgba(46,204,113,.06)}
+.defi-icon{font-size:20px;flex-shrink:0}
+.defi-info{flex:1}
+.defi-name{font-family:"Cinzel",serif;font-size:12px;color:var(--gold-l);margin-bottom:3px}
+.defi-card.done .defi-name{color:var(--muted);text-decoration:line-through}
+.defi-desc{font-size:11px;color:var(--muted);font-style:italic}
+.defi-xp{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--purple);flex-shrink:0}
+.defi-card.done .defi-xp{color:var(--green)}
+.defi-btn{background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.4);color:#b39ddb;font-family:"Share Tech Mono",monospace;font-size:10px;padding:4px 10px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.defi-btn:hover{background:rgba(142,68,173,.3)}
+.defi-btn.done{background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:var(--green);cursor:default}
+.defi-periode{font-family:"Share Tech Mono",monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:6px;margin-bottom:3px}
+
+/* ── RÉCOMPENSES ── */
+.reward-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+@media(max-width:480px){.reward-grid{grid-template-columns:1fr}}
+.reward-card{background:var(--panel);border:1px solid var(--border);padding:12px;opacity:.4;transition:opacity .5s,border-color .5s}
+.reward-card.unlocked{opacity:1;border-color:var(--gold-d)}
+.reward-card.current{border-color:var(--gold);background:rgba(201,168,76,.06)}
+.reward-level{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:4px}
+.reward-card.unlocked .reward-level{color:var(--green)}
+.reward-name{font-family:"Cinzel",serif;font-size:13px;color:var(--gold-l);margin-bottom:4px}
+.reward-desc{font-size:11px;color:var(--muted);font-style:italic;line-height:1.5}
+.reward-icon{font-size:22px;margin-bottom:4px}
+.lock-icon{font-size:14px;color:var(--muted)}
+
+/* ── HISTORY ── */
+.history-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);font-family:"Share Tech Mono",monospace;font-size:11px}
+.history-date{color:var(--muted);width:75px;flex-shrink:0}
+.history-score{width:32px;text-align:center}
+.history-bar-mini{flex:1;height:5px;background:#1a1a1a;overflow:hidden}
+.history-bar-fill{height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold))}
+.history-xp{color:var(--green);width:48px;text-align:right}
+
+/* ── TRAIT ROW ── */
+.trait-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);margin-bottom:4px}
+
+/* ── LEVEL UP FLASH ── */
+.levelup-flash{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .4s}
+.levelup-flash.show{opacity:1;pointer-events:all}
+.levelup-content{text-align:center;animation:lvlPulse .5s ease}
+@keyframes lvlPulse{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.levelup-title{font-family:"Cinzel Decorative",cursive;font-size:44px;color:var(--lup);text-shadow:0 0 40px rgba(241,196,15,.6)}
+.levelup-reward{font-family:"Cinzel",serif;font-size:16px;color:var(--gold-l);margin-top:10px}
+.levelup-sub{font-style:italic;color:var(--text);font-size:14px;margin-top:6px}
+.levelup-close{font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--muted);margin-top:16px;letter-spacing:2px;cursor:pointer}
+
+.ornament{text-align:center;color:var(--gold-d);letter-spacing:8px;font-size:12px;margin:12px 0;opacity:.6}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--gold-d)}
+</style>
+</head>
+<body>
+
+<!-- ════════ ONBOARDING CHATBOT ════════ -->
+<div id="onboarding">
+  <div class="ob-logo" id="ob-appname">⚔ FORGE TON EMPIRE ⚔</div>
+  <div class="ob-sub" id="ob-subtitle">Ton coach IA personnel — RPG de vie réelle</div>
+
+
+
+  <div class="chatbox">
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Réponds ici..." onkeydown="handleKey(event)"></textarea>
+      <button class="chat-send" onclick="sendUserMsg()">ENVOYER</button>
+    </div>
+  </div>
+  <div class="ob-status" id="obStatus">Coach IA activé — Réponds aux questions</div>
+  <div class="ob-skip" onclick="skipOnboarding()">→ Passer l'onboarding (mode démo)</div>
+</div>
+
+<!-- ════════ MAIN APP ════════ -->
+<div id="mainApp" style="display:none">
+<div class="page">
+
+<div class="header">
+  <div class="title-class" id="appClassName">[ Classe : L'Architecte du Mouvement ]</div>
+  <div class="char-name" id="appCharName">DAVID</div>
+  <div class="char-subtitle" id="appCharSubtitle">Fils de la cité · Survivant · Père · Bâtisseur d'Empire</div>
+</div>
+
+<div class="cap-warning" id="capWarning">⚠ CAP JOURNALIER ATTEINT — 200 XP MAX PAR JOUR. Reviens demain ou complète des défis bonus.</div>
+
+<div class="level-block">
+  <div class="level-badge" id="levelBadge">1</div>
+  <div class="level-info">
+    <div class="level-label">Expérience totale</div>
+    <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
+    <div class="xp-text" id="xpText">0 XP</div>
+  </div>
+  <div class="level-title" id="levelTitle">Aspirant</div>
+</div>
+
+<div class="hero-layout">
+  <div class="char-wrap">
+    <div class="char-aura" id="charAura"></div>
+    <svg id="charSvg" viewBox="0 0 240 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="sG" cx="50%" cy="30%" r="60%"><stop offset="0%" stop-color="#e8b896"/><stop offset="100%" stop-color="#c98a5a"/></radialGradient>
+        <radialGradient id="fG" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#f0c090"/><stop offset="100%" stop-color="#d4926a"/></radialGradient>
+        <linearGradient id="cS" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity=".15"/><stop offset="50%" stop-color="#fff" stop-opacity=".08"/><stop offset="100%" stop-color="#000" stop-opacity=".15"/></linearGradient>
+      </defs>
+      <path d="M100,270 Q92,300 90,340 Q95,345 102,345 Q106,310 110,280 Z" fill="#c98a5a"/>
+      <path d="M140,270 Q148,300 150,340 Q145,345 138,345 Q134,310 130,280 Z" fill="#c98a5a"/>
+      <rect x="90" y="230" width="60" height="50" rx="4" fill="#1a1a2e"/>
+      <line x1="120" y1="230" x2="120" y2="280" stroke="#111" stroke-width="1.5" opacity=".6"/>
+      <rect x="90" y="230" width="60" height="8" rx="2" fill="#252540"/>
+      <path d="M88,145 Q82,165 82,200 Q82,235 90,245 L130,250 L150,245 Q158,235 158,200 Q158,165 152,145 Z" fill="url(#sG)"/>
+      <g id="absG" opacity=".5">
+        <line x1="120" y1="160" x2="120" y2="235" stroke="#b07840" stroke-width="1.2" opacity=".5"/>
+        <path d="M107,175 Q120,172 133,175" stroke="#b07840" stroke-width="1" fill="none" opacity=".5"/>
+        <path d="M105,192 Q120,188 135,192" stroke="#b07840" stroke-width="1" fill="none" opacity=".5"/>
+        <path d="M104,208 Q120,204 136,208" stroke="#b07840" stroke-width="1" fill="none" opacity=".5"/>
+      </g>
+      <line id="cL" x1="120" y1="148" x2="120" y2="175" stroke="#b07840" stroke-width="1" opacity=".3"/>
+      <path id="pL" d="M90,148 Q100,143 118,148 Q120,158 118,168 Q104,172 90,165 Z" fill="url(#cS)" opacity=".4"/>
+      <path id="pR" d="M122,148 Q138,143 150,148 Q150,165 136,172 Q122,168 122,158 Z" fill="url(#cS)" opacity=".4"/>
+      <path d="M88,148 Q72,155 68,185 Q70,195 78,197 Q86,170 92,158 Z" fill="url(#sG)"/>
+      <path d="M68,185 Q60,210 62,235 Q68,238 74,236 Q74,212 78,197 Z" fill="#d49060"/>
+      <ellipse cx="63" cy="238" rx="7" ry="9" fill="#d49060"/>
+      <path d="M152,148 Q168,155 172,185 Q170,195 162,197 Q154,170 148,158 Z" fill="url(#sG)"/>
+      <path d="M172,185 Q180,210 178,235 Q172,238 166,236 Q166,212 162,197 Z" fill="#d49060"/>
+      <ellipse cx="177" cy="238" rx="7" ry="9" fill="#d49060"/>
+      <ellipse id="bHL" cx="74" cy="170" rx="5" ry="8" fill="white" opacity=".3" transform="rotate(-15,74,170)"/>
+      <ellipse id="bHR" cx="166" cy="170" rx="5" ry="8" fill="white" opacity=".3" transform="rotate(15,166,170)"/>
+      <ellipse id="shL" cx="84" cy="148" rx="12" ry="10" fill="#d49870"/>
+      <ellipse id="shR" cx="156" cy="148" rx="12" ry="10" fill="#d49870"/>
+      <path d="M96,145 Q108,138 120,136 Q132,138 144,145 Q135,148 120,147 Q105,148 96,145Z" fill="#c8855a" opacity=".7"/>
+      <rect x="112" y="110" width="16" height="30" rx="6" fill="url(#fG)"/>
+      <ellipse cx="120" cy="88" rx="32" ry="36" fill="url(#fG)"/>
+      <path d="M90,95 Q88,110 94,120 Q105,130 120,132 Q135,130 146,120 Q152,110 150,95" fill="url(#fG)" opacity=".9"/>
+      <ellipse cx="89" cy="88" rx="6" ry="8" fill="#d4906a"/>
+      <ellipse cx="151" cy="88" rx="6" ry="8" fill="#d4906a"/>
+      <ellipse cx="120" cy="65" rx="32" ry="20" fill="#1a1208"/>
+      <path d="M90,75 Q88,60 95,52 Q105,46 120,45 Q135,46 145,52 Q152,60 150,75" fill="#1a1208"/>
+      <path d="M89,78 Q88,68 93,60 Q90,72 90,80" fill="#0d0906" opacity=".8"/>
+      <path d="M151,78 Q152,68 147,60 Q150,72 150,80" fill="#0d0906" opacity=".8"/>
+      <ellipse cx="107" cy="86" rx="7.5" ry="5" fill="white" opacity=".92"/>
+      <ellipse cx="133" cy="86" rx="7.5" ry="5" fill="white" opacity=".92"/>
+      <circle id="iL" cx="107" cy="86" r="4" fill="#4a3520"/>
+      <circle id="iR" cx="133" cy="86" r="4" fill="#4a3520"/>
+      <circle cx="107" cy="86" r="2.2" fill="#0d0906"/>
+      <circle cx="133" cy="86" r="2.2" fill="#0d0906"/>
+      <circle cx="109" cy="84.5" r="1.2" fill="white" opacity=".7"/>
+      <circle cx="135" cy="84.5" r="1.2" fill="white" opacity=".7"/>
+      <path d="M100,82 Q107,79 114,82" stroke="#1a1208" stroke-width="2" fill="none"/>
+      <path d="M126,82 Q133,79 140,82" stroke="#1a1208" stroke-width="2" fill="none"/>
+      <path d="M118,90 Q116,100 114,104 Q117,107 120,107 Q123,107 126,104 Q124,100 122,90 Z" fill="#c8855a" opacity=".5"/>
+      <ellipse cx="115" cy="103" rx="3.5" ry="2" fill="#b07040" opacity=".4"/>
+      <ellipse cx="125" cy="103" rx="3.5" ry="2" fill="#b07040" opacity=".4"/>
+      <path id="mN" d="M111,114 Q120,118 129,114" stroke="#8a4a2a" stroke-width="1.8" fill="none"/>
+      <path id="mS" d="M110,113 Q120,122 130,113" stroke="#8a4a2a" stroke-width="1.8" fill="none" opacity="0"/>
+      <path id="mB" d="M108,112 Q120,124 132,112" stroke="#8a4a2a" stroke-width="2" fill="none" opacity="0"/>
+      <path id="lS" d="M110,113 Q115,116 120,117 Q125,116 130,113 Q125,119 120,120 Q115,119 110,113Z" fill="#c07060" opacity="0"/>
+      <path d="M96,108 Q105,128 120,131 Q135,128 144,108 Q138,118 120,122 Q102,118 96,108Z" fill="#2a1e14" opacity=".18"/>
+      <ellipse id="blL" cx="97" cy="99" rx="9" ry="6" fill="#ff8080" opacity="0"/>
+      <ellipse id="blR" cx="143" cy="99" rx="9" ry="6" fill="#ff8080" opacity="0"/>
+      <ellipse id="dkL" cx="107" cy="90" rx="8" ry="4" fill="#3a2010" opacity="0"/>
+      <ellipse id="dkR" cx="133" cy="90" rx="8" ry="4" fill="#3a2010" opacity="0"/>
+      <g id="crG" opacity="0">
+        <path d="M100,46 L108,36 L120,42 L132,36 L140,46 L138,48 L120,45 L102,48 Z" fill="#c9a84c" opacity=".9"/>
+        <circle cx="108" cy="37" r="2.5" fill="#e8c97a"/>
+        <circle cx="120" cy="42" r="2.5" fill="#e8c97a"/>
+        <circle cx="132" cy="37" r="2.5" fill="#e8c97a"/>
+      </g>
+      <g id="enG" opacity="0">
+        <line x1="120" y1="20" x2="120" y2="5" stroke="#c9a84c" stroke-width="1.5" opacity=".6"/>
+        <line x1="120" y1="20" x2="105" y2="8" stroke="#c9a84c" stroke-width="1" opacity=".4"/>
+        <line x1="120" y1="20" x2="135" y2="8" stroke="#c9a84c" stroke-width="1" opacity=".4"/>
+      </g>
+    </svg>
+    <div class="particles" id="particles"></div>
+    <div class="char-status" id="charStatus" style="color:var(--muted);border-color:var(--border)">DORMANT</div>
+  </div>
+  <div class="stats-side">
+    <div class="section-title">Attributs</div>
+    <div id="charStatLines"></div>
+    <div class="divider"></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:5px">ÉTAT MENTAL</div>
+    <div class="emotion-row" id="emotionRow"></div>
+    <div class="state-box">
+      <div class="state-box-title" id="stateTitle">L'Aspirant s'éveille</div>
+      <div class="state-box-body" id="stateBody">Le voyage commence. Chaque habitude cochée allume une braise.</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('objectifs')">🎯 Objectifs</button>
+  <button class="tab" onclick="switchTab('daily')">🗓 Journal</button>
+  <button class="tab" onclick="switchTab('defis')">⚡ Défis</button>
+  <button class="tab" onclick="switchTab('quests')">📜 Quêtes</button>
+  <button class="tab" onclick="switchTab('stats')">⚔ Stats</button>
+  <button class="tab" onclick="switchTab('recompenses')">🏆 Récompenses</button>
+  <button class="tab" onclick="switchTab('history')">📊 Historique</button>
+</div>
+
+<!-- TAB OBJECTIFS -->
+<div class="tab-content active" id="tab-objectifs">
+  <div class="section-title">Progression par période</div>
+  <div class="period-grid">
+    <div class="period-card gold-border">
+      <div class="period-label">Aujourd'hui</div>
+      <div class="period-val" id="dayXPVal">0</div>
+      <div class="period-sub" id="dayXPSub">XP / 200 max</div>
+      <div class="period-bar-wrap"><div class="period-bar-fill" id="dayBar" style="width:0%"></div></div>
+      <div class="period-xp" id="dayPct">0%</div>
+    </div>
+    <div class="period-card">
+      <div class="period-label">Cette semaine</div>
+      <div class="period-val" id="weekXPVal">0</div>
+      <div class="period-sub" id="weekXPSub">XP / 1400 objectif</div>
+      <div class="period-bar-wrap"><div class="period-bar-fill" id="weekBar" style="width:0%"></div></div>
+      <div class="period-xp" id="weekPct">0%</div>
+    </div>
+    <div class="period-card">
+      <div class="period-label">Ce mois</div>
+      <div class="period-val" id="monthXPVal">0</div>
+      <div class="period-sub" id="monthXPSub">XP / 5000 objectif</div>
+      <div class="period-bar-wrap"><div class="period-bar-fill" id="monthBar" style="width:0%"></div></div>
+      <div class="period-xp" id="monthPct">0%</div>
+    </div>
+  </div>
+  <div class="ornament">✦ ✦ ✦</div>
+  <div class="section-title">Règles de progression</div>
+  <div style="background:var(--panel);border:1px solid var(--border);padding:14px 16px;font-size:12px;line-height:1.9;color:var(--muted)">
+    <div>⏳ <span style="color:var(--text)">Cap journalier :</span> 200 XP max par jour via les habitudes. Les défis ne sont pas capés.</div>
+    <div>📅 <span style="color:var(--text)">Objectif hebdo :</span> 1 400 XP (7 jours × 200). Défis inclus.</div>
+    <div>🗓 <span style="color:var(--text)">Objectif mensuel :</span> 5 000 XP. Nécessite régularité + défis.</div>
+    <div>🔒 <span style="color:var(--text)">Niveaux verrouillés :</span> Chaque niveau demande du temps réel, pas juste du XP.</div>
+    <div>⚡ <span style="color:var(--text)">Défis bonus :</span> XP supplémentaire non capé — mais limités par période.</div>
+  </div>
+</div>
+
+<!-- TAB DAILY -->
+<div class="tab-content" id="tab-daily">
+  <div class="date-nav">
+    <button class="date-btn" onclick="changeDay(-1)">&#8249;</button>
+    <div class="date-display" id="dateDisplay">---</div>
+    <button class="date-btn" onclick="changeDay(1)">&#8250;</button>
+  </div>
+  <div id="habitsList"></div>
+  <div class="day-summary">
+    <div class="summary-row">
+      <span class="summary-label">XP du jour</span>
+      <span class="summary-val" id="summaryXPDay" style="color:var(--green)">+0 XP</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Accomplissement</span>
+      <span class="summary-val" id="summaryPct">0%</span>
+    </div>
+    <div class="summary-bar-wrap"><div class="summary-bar-fill" id="summaryBarFill" style="width:0%"></div></div>
+    <div class="day-grade" id="dayGrade">--</div>
+    <div class="day-verdict" id="dayVerdict"></div>
+  </div>
+</div>
+
+<!-- TAB DÉFIS -->
+<div class="tab-content" id="tab-defis">
+  <div class="section-title">Défis actifs</div>
+  <div id="defisList"></div>
+</div>
+
+<!-- TAB QUESTS -->
+<div class="tab-content" id="tab-quests">
+  <div class="section-title">Quête principale</div>
+  <div id="mainQuestContainer"></div>
+  <div class="ornament">✦ ✦ ✦</div>
+  <div class="section-title">Quêtes secondaires</div>
+  <div id="sideQuestsContainer"></div>
+</div>
+
+<!-- TAB STATS -->
+<div class="tab-content" id="tab-stats">
+  <div class="section-title">Attributs du personnage</div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="ornament">✦ ✦ ✦</div>
+  <div class="section-title">Traits & Buffs</div>
+  <div id="traitsList"></div>
+</div>
+
+<!-- TAB RÉCOMPENSES -->
+<div class="tab-content" id="tab-recompenses">
+  <div class="section-title">Récompenses par niveau</div>
+  <div class="reward-grid" id="rewardGrid"></div>
+</div>
+
+<!-- TAB HISTORY -->
+<div class="tab-content" id="tab-history">
+  <div class="section-title">Chroniques</div>
+  <div id="historyContainer">
+    <div style="color:var(--muted);font-style:italic;padding:20px;text-align:center;font-size:13px;">Commence à journaliser pour voir ton historique.</div>
+  </div>
+</div>
+
+</div></div>
+
+<!-- LEVEL UP FLASH -->
+<div class="levelup-flash" id="levelupFlash">
+  <div class="levelup-content">
+    <div class="levelup-title">NIVEAU +</div>
+    <div class="levelup-reward" id="levelupReward"></div>
+    <div class="levelup-sub" id="levelupSub"></div>
+    <div class="levelup-close" onclick="document.getElementById('levelupFlash').classList.remove('show')">[ CONTINUER ]</div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════
+const XP_CAP_DAY = 200;
+const XP_TARGET_WEEK = 1400;
+const XP_TARGET_MONTH = 5000;
+const MIN_DAYS_PER_LEVEL = [0, 3, 7, 14, 21, 30, 60]; // min jours avant de pouvoir atteindre ce niveau
+
+const LEVELS = [
+  {min:0,    title:"Aspirant",       xpNext:600},
+  {min:600,  title:"Survivant",      xpNext:1000},
+  {min:1600, title:"Constructeur",   xpNext:1600},
+  {min:3200, title:"Architecte",     xpNext:2400},
+  {min:5600, title:"Maître Ouvrier", xpNext:3600},
+  {min:9200, title:"Seigneur",       xpNext:6000},
+  {min:15200,title:"Légende",        xpNext:Infinity},
+];
+
+const REWARDS = [
+  {level:1, icon:"🌱", name:"L'Éveil", desc:"Tu as pris conscience. Le voyage commence. Titre : Aspirant débloqué.", trait:"Volonté naissante"},
+  {level:2, icon:"🔥", name:"Le Feu Intérieur", desc:"La discipline s'installe. Nouveau cadre de personnage doré débloqué.", trait:"Résistance +10"},
+  {level:3, icon:"⚒", name:"Les Fondations", desc:"Tu bâtis. Accès aux défis hebdomadaires avancés débloqué.", trait:"Constructeur +15"},
+  {level:4, icon:"⚔", name:"La Maîtrise", desc:"Tu rayonnes. Aura dorée permanente + titre Architecte.", trait:"Aura de leadership"},
+  {level:5, icon:"👑", name:"L'Empire", desc:"Accès au salon fondateurs communauté + badge élite.", trait:"Invincibilité mentale"},
+  {level:6, icon:"⭐", name:"La Légende", desc:"Tu es la preuve vivante. Accès coaching 1:1 IA débloqué.", trait:"Héritage éternel"},
+];
+
+const CHAR_STATES = [
+  {minXP:0,   status:"DORMANT",           statusColor:"#555",    stateTitle:"L'Aspirant s'éveille",      stateBody:"Le voyage commence. Chaque habitude cochée allume une braise.",                        emotions:["Incertain","Curieux"],     active:["Curieux"],         abs:.5, bic:.3, chest:.3, pec:.4, blush:0,   dark:.12, crown:0, energy:0, aura:0,   auraC:"transparent", glow:"none",     smile:"neutral", iris:"#4a3520", pc:null, pn:0, srx:12, sry:10, cs:{physique:82,muscle:85,moral:38,energie:50,rayonnement:44}},
+  {minXP:600, status:"EN MOUVEMENT",      statusColor:"#e67e22", stateTitle:"Le Survivant reprend pied",   stateBody:"Le corps tient. La discipline revient. Le mental suit.",                               emotions:["Déterminé","Stable"],      active:["Déterminé","Stable"], abs:.65, bic:.45, chest:.45, pec:.6, blush:0, dark:.04, crown:0, energy:0, aura:0,   auraC:"transparent", glow:"none",     smile:"slight",  iris:"#5a4030", pc:null, pn:0, srx:13, sry:11, cs:{physique:84,muscle:87,moral:50,energie:58,rayonnement:52}},
+  {minXP:1600,status:"EN CONSTRUCTION",   statusColor:"#f39c12", stateTitle:"Le Constructeur aligne tout", stateBody:"Le physique était déjà là. Maintenant l'esprit et la mission s'alignent.",           emotions:["Focalisé","Confiant"],     active:["Focalisé","Confiant"], abs:.8, bic:.6, chest:.62, pec:.78, blush:0, dark:0, crown:0, energy:0, aura:.06, auraC:"#f39c12", glow:"drop-shadow(0 0 6px rgba(243,156,18,.2))", smile:"slight", iris:"#6a5040", pc:"#f39c12", pn:2, srx:14, sry:12, cs:{physique:86,muscle:88,moral:65,energie:70,rayonnement:66}},
+  {minXP:3200,status:"EN ASCENSION",      statusColor:"#c9a84c", stateTitle:"L'Architecte rayonne",       stateBody:"Corps au sommet. Esprit stratège. L'aura précède l'homme dans la pièce.",            emotions:["Rayonnant","Maître","Inspirant"], active:["Rayonnant","Maître","Inspirant"], abs:.92, bic:.74, chest:.8, pec:.92, blush:.06, dark:0, crown:0, energy:0, aura:.12, auraC:"#c9a84c", glow:"drop-shadow(0 0 12px rgba(201,168,76,.35))", smile:"smile", iris:"#7a6050", pc:"#c9a84c", pn:4, srx:15, sry:13, cs:{physique:89,muscle:91,moral:78,energie:82,rayonnement:80}},
+  {minXP:5600,status:"PUISSANCE MAXIMALE",statusColor:"#e8c97a", stateTitle:"Le Maître forge son empire",  stateBody:"Corps, mental, mission : tout aligné. L'empire se construit.",                         emotions:["Invincible","Aligné","Heureux"], active:["Invincible","Aligné","Heureux"], abs:1, bic:.9, chest:.92, pec:1, blush:.1, dark:0, crown:.6, energy:.4, aura:.2, auraC:"#e8c97a", glow:"drop-shadow(0 0 18px rgba(232,201,122,.5))", smile:"big", iris:"#9a7a50", pc:"#e8c97a", pn:7, srx:16, sry:14, cs:{physique:92,muscle:94,moral:88,energie:91,rayonnement:90}},
+  {minXP:9200,status:"LÉGENDE VIVANTE",   statusColor:"#c9a84c", stateTitle:"Le Seigneur s'est accompli", stateBody:"Tu ES l'homme que tu voulais devenir. L'empire est réel. L'héritage est posé.",      emotions:["Légendaire","Libre","Père accompli"], active:["Légendaire","Libre","Père accompli"], abs:1, bic:1, chest:1, pec:1, blush:.14, dark:0, crown:1, energy:.8, aura:.28, auraC:"#c9a84c", glow:"drop-shadow(0 0 24px rgba(201,168,76,.65))", smile:"big", iris:"#b09060", pc:"#e8c97a", pn:12, srx:17, sry:15, cs:{physique:96,muscle:97,moral:95,energie:96,rayonnement:97}},
+];
+
+const CSTAT_COLORS = {physique:"#e74c3c",muscle:"#e67e22",moral:"#9b59b6",energie:"#1abc9c",rayonnement:"#c9a84c"};
+const CSTAT_LABELS = {physique:"Physique",muscle:"Muscle",moral:"Mental",energie:"Énergie",rayonnement:"Rayonnement"};
+
+const HABITS_DEFAULT = [
+  {cat:"Fondamentaux",items:[
+    {id:"no_phone",  icon:"📵", name:"Pas de téléphone la 1ère heure", xp:15},
+    {id:"journal",   icon:"📓", name:"Journal / écriture (5 min)",     xp:20},
+    {id:"lecture",   icon:"📚", name:"Lecture (20 min min.)",           xp:15},
+    {id:"sleep",     icon:"🌙", name:"Sommeil 7-8h respecté",           xp:20},
+  ]},
+  {cat:"Corps & Énergie",items:[
+    {id:"gym",       icon:"🏋", name:"Entraînement (RPT ou sport)",    xp:25},
+    {id:"proteines", icon:"🥩", name:"Protéines 1g/lb atteintes",      xp:15},
+    {id:"eau",       icon:"💧", name:"Hydratation 2-3L",               xp:10},
+  ]},
+  {cat:"Business & Mission",items:[
+    {id:"prospection",icon:"📞", name:"Prospection / Sales",           xp:30},
+    {id:"contenu",   icon:"🎬", name:"Contenu créé ou publié",         xp:25},
+    {id:"drwakiza",  icon:"🏗", name:"Travail sur le projet",          xp:25},
+  ]},
+  {cat:"Esprit & Âme",items:[
+    {id:"psy_work",  icon:"🧘", name:"Méditation / travail intérieur", xp:15},
+    {id:"no_weed",   icon:"🚫", name:"Zéro weed (maintenu)",           xp:20},
+    {id:"emilio",    icon:"👦", name:"Temps de qualité avec l'enfant",xp:30},
+  ]},
+];
+
+const DEFIS_POOL = [
+  // Journaliers
+  {id:"d_journal_share", period:"daily",   icon:"✍️", name:"Partage ton intention du jour",     desc:"Poste ton objectif du jour sur le forum communautaire.",   xp:40,  repeatable:false},
+  {id:"d_cold_shower",   period:"daily",   icon:"🚿", name:"Douche froide complète",             desc:"Termine ta douche avec 60 secondes d'eau froide.",         xp:30,  repeatable:false},
+  {id:"d_no_screen_1h",  period:"daily",   icon:"📵", name:"1h sans écran après 20h",           desc:"Pas de téléphone ni d'écran 1h avant de dormir.",          xp:35,  repeatable:false},
+  // Hebdomadaires
+  {id:"d_anecdote",      period:"weekly",  icon:"💬", name:"Raconte une anecdote sur le forum",  desc:"Partage une victoire ou une leçon de la semaine.",          xp:80,  repeatable:false},
+  {id:"d_10_replies",    period:"weekly",  icon:"🗣", name:"10 réponses sur le forum",           desc:"Soutiens 10 membres de la communauté cette semaine.",       xp:100, repeatable:false},
+  {id:"d_new_habit",     period:"weekly",  icon:"⚡", name:"Nouvelle habitude 5 jours consécutifs",desc:"Coche la même habitude 5 jours de suite cette semaine.",  xp:90,  repeatable:false},
+  {id:"d_photo_progress",period:"weekly",  icon:"📸", name:"Photo de progression",              desc:"Poste une photo avant/après ou de ton entrainement.",       xp:60,  repeatable:false},
+  // Mensuels
+  {id:"d_review_month",  period:"monthly", icon:"📊", name:"Bilan mensuel complet",             desc:"Écris un bilan de tes progrès du mois sur le forum.",       xp:200, repeatable:false},
+  {id:"d_100_streak",    period:"monthly", icon:"🔥", name:"20 jours consécutifs",              desc:"Ne manque aucun jour pendant 20 jours ce mois-ci.",         xp:300, repeatable:false},
+  {id:"d_recruit",       period:"monthly", icon:"🤝", name:"Recrute un frère",                  desc:"Invite quelqu'un dans la communauté ce mois-ci.",          xp:150, repeatable:false},
+];
+
+const STATS_RPG = [
+  {id:"physique",  icon:"💪", name:"Physique",  baseVal:82, color:"#e74c3c", desc:"Corps de coach S&C. Déjà au sommet.", habits:["gym","proteines","eau","sleep"]},
+  {id:"mental",    icon:"🧠", name:"Mental",    baseVal:70, color:"#9b59b6", desc:"Conscience élevée. Réactivité en cours de domestication.", habits:["lecture","journal","psy_work"]},
+  {id:"business",  icon:"📈", name:"Business",  baseVal:65, color:"#f39c12", desc:"Top 5% France. Le projet grandit.", habits:["prospection","contenu","drwakiza"]},
+  {id:"discipline",icon:"⚡", name:"Discipline",baseVal:60, color:"#1abc9c", desc:"Sais ce qu'il faut faire. L'exécution est la quête.", habits:["no_phone","no_weed"]},
+  {id:"paternite", icon:"🧒", name:"Paternité", baseVal:75, color:"#3498db", desc:"Ton ancre. Ton pourquoi absolu.", habits:["emilio"]},
+  {id:"emotions",  icon:"🌊", name:"Émotions",  baseVal:55, color:"#e91e63", desc:"Psy en cours. Travail de fond.", habits:["psy_work","journal","no_weed"]},
+];
+
+const TRAITS_RPG = [
+  {icon:"🦁", name:"Fils de la cité",          desc:"+10 Résilience naturelle"},
+  {icon:"🌊", name:"Traverseur de l'Atlantique",desc:"+15 Capacité à tout recommencer"},
+  {icon:"🧬", name:"Coach S&C",                 desc:"+20 Compréhension du corps humain"},
+  {icon:"📖", name:"Lecteur de Jung & Frankl",  desc:"+15 Intelligence émotionnelle"},
+  {icon:"⚔",  name:"Stratège commercial",       desc:"+20 Persuasion & influence"},
+];
+
+const MAIN_QUEST = {name:"L'Empire du Mouvement", badge:"QUÊTE PRINCIPALE", desc:"Construire une plateforme qui transforme la vie des hommes en reconstruction. Liberté géographique, impact réel, héritage.",
+  steps:[{label:"Audience sociale",pct:15},{label:"50 vidéos publiées",pct:8},{label:"1er produit lancé",pct:0},{label:"Communauté payante",pct:0},{label:"Liberté géographique",pct:20}]};
+const SIDE_QUESTS = [
+  {name:"La Reconstruction Intérieure", badge:"QUÊTE SECONDAIRE", desc:"Séances psy, lecture, maîtrise des réactivités.", habits:["journal","lecture","psy_work"]},
+  {name:"Le Chasseur de Grands Poissons",badge:"QUÊTE SECONDAIRE", desc:"Scaler le consulting B2B. Viser les gros deals.", habits:["prospection","drwakiza"]},
+  {name:"Le Père Légendaire",           badge:"QUÊTE SECONDAIRE", desc:"Être le modèle que ton enfant voudra imiter.", habits:["emilio"]},
+  {name:"Le Corps comme Forteresse",    badge:"QUÊTE SECONDAIRE", desc:"Musculation, sommeil, nutrition. La discipline physique.", habits:["gym","proteines","sleep"]},
+];
+
+const VERDICTS = [
+  {min:0,  grade:"F", color:"#555",    text:"Le personnage dort. Pas de zéro day. Demain est une nouvelle bataille."},
+  {min:20, grade:"D", color:"#7f8c8d", text:"Timide avancée. Tu as bougé. Mais tu peux mieux."},
+  {min:40, grade:"C", color:"#e67e22", text:"Journée moyenne. L'Architecte n'a pas donné son maximum."},
+  {min:60, grade:"B", color:"#f39c12", text:"Bonne journée. L'Empire se construit, brique par brique."},
+  {min:80, grade:"A", color:"#27ae60", text:"Journée puissante. Ce sont ces jours qui font les légendes."},
+  {min:95, grade:"S", color:"#c9a84c", text:"JOUR LÉGENDAIRE. Invincible. C'est ça l'homme que tu deviens."},
+];
+
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let state = JSON.parse(localStorage.getItem("rpg_forge_v1") || "{}");
+if (!state.history)   state.history   = [];
+if (!state.defis)     state.defis     = {};
+if (!state.profile)   state.profile   = null;
+if (!state.habits)    state.habits    = null;
+let currentOffset = 0;
+
+let habits = state.habits || HABITS_DEFAULT;
+
+function saveState() { localStorage.setItem("rpg_forge_v1", JSON.stringify(state)); }
+
+function dateKey(offset=0) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  return d.toISOString().split("T")[0];
+}
+function weekKey(date=new Date()) {
+  const d = new Date(date); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + 1);
+  return "week-" + d.toISOString().split("T")[0];
+}
+function monthKey(date=new Date()) {
+  return "month-" + date.getFullYear() + "-" + (date.getMonth()+1);
+}
+
+function getDayData(offset) {
+  const key = dateKey(offset);
+  if (!state[key]) state[key] = {};
+  return {key, data:state[key]};
+}
+
+// ══════════════════════════════════════════════════
+// XP COMPUTE
+// ══════════════════════════════════════════════════
+function dayXPRaw(dayData) {
+  let x=0; habits.forEach(c=>c.items.forEach(h=>{if(dayData[h.id])x+=h.xp;})); return x;
+}
+function dayXPCapped(dayData) { return Math.min(dayXPRaw(dayData), XP_CAP_DAY); }
+function dayXPDefis(key) {
+  let x=0;
+  DEFIS_POOL.forEach(d=>{
+    const dk = d.period==="daily"?key : d.period==="weekly"?weekKey(new Date(key)) : monthKey(new Date(key));
+    if(state.defis[dk] && state.defis[dk][d.id]) x+=d.xp;
+  });
+  return x;
+}
+function dayXPTotal(dayData, key) { return dayXPCapped(dayData) + dayXPDefis(key); }
+
+function computeTotalXP() {
+  let total=0;
+  Object.keys(state).forEach(k=>{
+    if(k==="history"||k==="defis"||k==="profile"||k==="habits") return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+    total += dayXPTotal(state[k], k);
+  });
+  return total;
+}
+
+function computePeriodXP(period) {
+  const now = new Date();
+  let total=0, keys=[];
+  if(period==="week") {
+    const wk = weekKey(now);
+    for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);if(weekKey(d)===wk)keys.push(dateKey(-i));}
+  } else if(period==="month") {
+    for(let i=0;i<31;i++){const d=new Date();d.setDate(d.getDate()-i);if(monthKey(d)===monthKey(now))keys.push(dateKey(-i));}
+  }
+  keys.forEach(k=>{if(state[k]) total+=dayXPTotal(state[k],k);});
+  return total;
+}
+
+function getLevelInfo(xp) {
+  const days = Object.keys(state).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).length;
+  let lv=0;
+  for(let i=LEVELS.length-1;i>=0;i--){
+    if(xp>=LEVELS[i].min && days>=MIN_DAYS_PER_LEVEL[i]){lv=i;break;}
+  }
+  const cur=LEVELS[lv], next=LEVELS[Math.min(lv+1,LEVELS.length-1)];
+  const xpIn=xp-cur.min, xpFor=next.min-cur.min;
+  const pct=lv===LEVELS.length-1?100:Math.min(100,Math.round(xpIn/xpFor*100));
+  return {level:lv+1, title:cur.title, pct, xpInLevel:xpIn, xpForNext:xpFor, nextTitle:next.title};
+}
+
+// ══════════════════════════════════════════════════
+// CHARACTER ANIMATION
+// ══════════════════════════════════════════════════
+let ptInterval=null;
+function spawnParticles(color,count){
+  if(ptInterval)clearInterval(ptInterval);
+  document.getElementById("particles").innerHTML="";
+  if(!color||count===0)return;
+  function spawn(){
+    const c=document.getElementById("particles");
+    if(c.children.length>count*3)return;
+    const p=document.createElement("div");p.className="particle";
+    const sz=3+Math.random()*5;
+    p.style.cssText="width:"+sz+"px;height:"+sz+"px;background:"+color+";left:"+(12+Math.random()*176)+"px;top:"+(60+Math.random()*230)+"px;animation-duration:"+(2+Math.random()*3)+"s;animation-delay:"+(Math.random()*2)+"s;box-shadow:0 0 "+sz+"px "+color+";";
+    c.appendChild(p); setTimeout(()=>p.remove(),5000);
+  }
+  ptInterval=setInterval(spawn,300/Math.max(1,count));
+}
+
+function getCharState(xp){
+  let st=CHAR_STATES[0];
+  for(let i=CHAR_STATES.length-1;i>=0;i--){if(xp>=CHAR_STATES[i].minXP){st=CHAR_STATES[i];break;}}
+  return st;
+}
+function applyCharState(xp){
+  const st=getCharState(xp);
+  const badge=document.getElementById("charStatus");
+  badge.textContent=st.status; badge.style.color=st.statusColor; badge.style.borderColor=st.statusColor+"60";
+  const lines=document.getElementById("charStatLines");
+  lines.innerHTML=Object.keys(st.cs).map(k=>`<div class="cstat-line"><div class="cstat-head"><span class="cstat-label">${CSTAT_LABELS[k]}</span><span class="cstat-val">${st.cs[k]}</span></div><div class="cstat-track"><div class="cstat-fill" style="width:${st.cs[k]}%;background:${CSTAT_COLORS[k]}"></div></div></div>`).join("");
+  document.getElementById("emotionRow").innerHTML=st.emotions.map(e=>`<span class="emotion-chip ${st.active.includes(e)?"active":""}">${e}</span>`).join("");
+  document.getElementById("stateTitle").textContent=st.stateTitle;
+  document.getElementById("stateBody").textContent=st.stateBody;
+  const m={absG:st.abs,bHL:st.bic,bHR:st.bic,cL:st.chest,pL:st.pec,pR:st.pec,blL:st.blush,blR:st.blush,dkL:st.dark,dkR:st.dark,crG:st.crown,enG:st.energy};
+  Object.keys(m).forEach(id=>{const el=document.getElementById(id);if(el)el.style.opacity=m[id];});
+  document.getElementById("shL").setAttribute("rx",st.srx);document.getElementById("shL").setAttribute("ry",st.sry);
+  document.getElementById("shR").setAttribute("rx",st.srx);document.getElementById("shR").setAttribute("ry",st.sry);
+  document.getElementById("iL").setAttribute("fill",st.iris);document.getElementById("iR").setAttribute("fill",st.iris);
+  document.getElementById("mN").style.opacity=st.smile==="neutral"?1:0;
+  document.getElementById("mS").style.opacity=st.smile==="slight"?1:0;
+  document.getElementById("mB").style.opacity=st.smile==="big"?1:0;
+  document.getElementById("lS").style.opacity=["slight","big"].includes(st.smile)?0.4:0;
+  document.getElementById("charSvg").style.filter=st.glow;
+  const aura=document.getElementById("charAura");
+  if(st.aura>0&&st.auraC!=="transparent"){
+    aura.style.background="radial-gradient(ellipse at 50% 50%,"+st.auraC+Math.round(st.aura*255).toString(16).padStart(2,"0")+" 0%,transparent 70%)";
+    aura.style.opacity="1";
+  } else {aura.style.opacity="0";}
+  spawnParticles(st.pc,st.pn);
+}
+
+// ══════════════════════════════════════════════════
+// RENDER OBJECTIFS
+// ══════════════════════════════════════════════════
+function renderObjectifs(){
+  const {data,key}=getDayData(0);
+  const todayXP=dayXPTotal(data,key);
+  const weekXP=computePeriodXP("week");
+  const monthXP=computePeriodXP("month");
+  const todayPct=Math.min(100,Math.round(todayXP/XP_CAP_DAY*100));
+  const weekPct=Math.min(100,Math.round(weekXP/XP_TARGET_WEEK*100));
+  const monthPct=Math.min(100,Math.round(monthXP/XP_TARGET_MONTH*100));
+  document.getElementById("dayXPVal").textContent=todayXP;
+  document.getElementById("dayXPSub").textContent="XP / "+XP_CAP_DAY+" max";
+  document.getElementById("dayBar").style.width=todayPct+"%";
+  document.getElementById("dayPct").textContent=todayPct+"%";
+  document.getElementById("weekXPVal").textContent=weekXP;
+  document.getElementById("weekBar").style.width=weekPct+"%";
+  document.getElementById("weekPct").textContent=weekPct+"%";
+  document.getElementById("monthXPVal").textContent=monthXP;
+  document.getElementById("monthBar").style.width=monthPct+"%";
+  document.getElementById("monthPct").textContent=monthPct+"%";
+  // Cap warning
+  const rawDay=dayXPRaw(data);
+  document.getElementById("capWarning").classList.toggle("show",rawDay>=XP_CAP_DAY);
+}
+
+// ══════════════════════════════════════════════════
+// RENDER DAILY
+// ══════════════════════════════════════════════════
+function renderDaily(){
+  const {key,data}=getDayData(currentOffset);
+  const d=new Date();d.setDate(d.getDate()+currentOffset);
+  const days=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+  const months=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+  document.getElementById("dateDisplay").textContent=days[d.getDay()]+" "+d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
+  const rawXP=dayXPRaw(data);
+  const isCapped=rawXP>=XP_CAP_DAY && currentOffset===0;
+  const list=document.getElementById("habitsList");list.innerHTML="";
+  habits.forEach(cat=>{
+    const cd=document.createElement("div");cd.className="habit-category";cd.textContent=cat.name;list.appendChild(cd);
+    cat.items.forEach(h=>{
+      const done=!!data[h.id];
+      const capped=isCapped&&!done;
+      const row=document.createElement("div");
+      row.className="habit-row"+(done?" done":"")+(capped?" capped":"");
+      row.innerHTML=`<div class="habit-check">${done?"✓":""}</div><span class="habit-icon">${h.icon}</span><span class="habit-name">${h.name}</span><span class="habit-xp">${capped?"CAP":"+"+h.xp+" XP"}</span>`;
+      if(!capped) row.onclick=()=>toggleHabit(h.id);
+      list.appendChild(row);
+    });
+  });
+  const dayXP=dayXPTotal(data,key), maxXP=habits.reduce((s,c)=>s+c.items.reduce((a,h)=>a+h.xp,0),0);
+  const pct=maxXP===0?0:Math.round(dayXPRaw(data)/maxXP*100);
+  document.getElementById("summaryXPDay").textContent="+"+dayXP+" XP";
+  document.getElementById("summaryPct").textContent=pct+"%";
+  document.getElementById("summaryBarFill").style.width=pct+"%";
+  const v=[...VERDICTS].reverse().find(v=>pct>=v.min)||VERDICTS[0];
+  document.getElementById("dayGrade").textContent=v.grade;
+  document.getElementById("dayGrade").style.color=v.color;
+  document.getElementById("dayVerdict").textContent=v.text;
+}
+
+function toggleHabit(id){
+  const {key,data}=getDayData(currentOffset);
+  const prevXP=computeTotalXP();
+  data[id]=!data[id]; state[key]=data; saveState();
+  const newXP=computeTotalXP();
+  const prevLv=getLevelInfo(prevXP).level, newLv=getLevelInfo(newXP).level;
+  if(newLv>prevLv) triggerLevelUp(newLv);
+  renderAll();
+}
+
+function changeDay(delta){
+  const n=currentOffset+delta;
+  const target=new Date();target.setDate(target.getDate()+n);
+  const max=new Date("2027-05-21");
+  if(target>max)return;
+  currentOffset=n; renderDaily();
+}
+
+// ══════════════════════════════════════════════════
+// RENDER DÉFIS
+// ══════════════════════════════════════════════════
+function getDefiKey(defi){
+  const now=new Date();
+  if(defi.period==="daily")  return dateKey(0);
+  if(defi.period==="weekly") return weekKey(now);
+  return monthKey(now);
+}
+function isDefiDone(defi){
+  const k=getDefiKey(defi);
+  return !!(state.defis[k]&&state.defis[k][defi.id]);
+}
+function completeDefi(defi){
+  if(isDefiDone(defi))return;
+  const k=getDefiKey(defi);
+  if(!state.defis[k])state.defis[k]={};
+  state.defis[k][defi.id]=true;
+  const prevXP=computeTotalXP(); saveState();
+  const newXP=computeTotalXP();
+  const prevLv=getLevelInfo(prevXP).level, newLv=getLevelInfo(newXP).level;
+  if(newLv>prevLv) triggerLevelUp(newLv);
+  renderAll();
+}
+
+function renderDefis(){
+  const list=document.getElementById("defisList");list.innerHTML="";
+  const periods=["daily","weekly","monthly"];
+  const labels={"daily":"Défis journaliers","weekly":"Défis hebdomadaires","monthly":"Défis mensuels"};
+  periods.forEach(p=>{
+    const defis=DEFIS_POOL.filter(d=>d.period===p);
+    const lbl=document.createElement("div");lbl.className="habit-category defi-periode";lbl.textContent=labels[p];list.appendChild(lbl);
+    defis.forEach(d=>{
+      const done=isDefiDone(d);
+      const card=document.createElement("div");card.className="defi-card"+(done?" done":"");
+      card.innerHTML=`<span class="defi-icon">${d.icon}</span><div class="defi-info"><div class="defi-name">${d.name}</div><div class="defi-desc">${d.desc}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px"><span class="defi-xp">+${d.xp} XP</span><button class="defi-btn ${done?"done":""}" ${done?"disabled":""}onclick="completeDefi(DEFIS_POOL.find(x=>x.id==='${d.id}'))">${done?"✓ Fait":"Valider"}</button></div>`;
+      list.appendChild(card);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════
+// RENDER RÉCOMPENSES
+// ══════════════════════════════════════════════════
+function renderRecompenses(){
+  const xp=computeTotalXP(), info=getLevelInfo(xp);
+  const grid=document.getElementById("rewardGrid");grid.innerHTML="";
+  REWARDS.forEach(r=>{
+    const unlocked=info.level>r.level;
+    const current=info.level===r.level;
+    const card=document.createElement("div");
+    card.className="reward-card"+(unlocked?" unlocked":"")+(current?" current":"");
+    card.innerHTML=`<div class="reward-level">${unlocked?"✓ DÉBLOQUÉ":"🔒 NIVEAU "+r.level}</div><div class="reward-icon">${r.icon}</div><div class="reward-name">${r.name}</div><div class="reward-desc">${r.desc}</div>${unlocked?`<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);margin-top:6px;letter-spacing:1px">TRAIT: ${r.trait}</div>`:""}`;
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// RENDER LEVEL BAR
+// ══════════════════════════════════════════════════
+function renderLevelBar(){
+  const xp=computeTotalXP(), info=getLevelInfo(xp);
+  document.getElementById("levelBadge").textContent=info.level;
+  document.getElementById("levelTitle").textContent=info.title;
+  document.getElementById("xpBarFill").style.width=info.pct+"%";
+  const isMax=info.level===LEVELS.length;
+  document.getElementById("xpText").textContent=isMax?xp+" XP — LÉGENDE":info.xpInLevel+" / "+info.xpForNext+" XP → "+info.nextTitle;
+  applyCharState(xp);
+}
+
+// ══════════════════════════════════════════════════
+// RENDER STATS
+// ══════════════════════════════════════════════════
+function renderStats(){
+  const grid=document.getElementById("statsGrid");grid.innerHTML="";
+  STATS_RPG.forEach(stat=>{
+    let bonus=0; const keys=Object.keys(state).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
+    keys.forEach(k=>{stat.habits.forEach(hid=>{if(state[k][hid])bonus+=0.5;});});
+    bonus=Math.min(18,Math.floor(bonus));
+    const val=Math.min(100,stat.baseVal+bonus);
+    const card=document.createElement("div");card.className="stat-card";
+    card.innerHTML=`<span class="stat-icon">${stat.icon}</span><div class="stat-name">${stat.name}</div><div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${val}%;background:${stat.color}"></div></div><div class="stat-value">${val}<span style="font-size:9px;color:var(--muted)">/100</span></div>${bonus>0?`<div style="font-size:9px;color:var(--green);font-family:'Share Tech Mono',monospace;margin-top:2px">+${bonus}</div>`:""}`;
+    grid.appendChild(card);
+  });
+  const tl=document.getElementById("traitsList");tl.innerHTML="";
+  TRAITS_RPG.forEach(t=>{
+    const d=document.createElement("div");d.className="trait-row";
+    d.innerHTML=`<span style="font-size:16px">${t.icon}</span><div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold-l)">${t.name}</div><div style="font-size:10px;color:var(--muted);font-style:italic">${t.desc}</div></div>`;
+    tl.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// RENDER QUESTS
+// ══════════════════════════════════════════════════
+function renderQuests(){
+  const keys=Object.keys(state).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
+  const counts={};habits.forEach(c=>c.items.forEach(h=>counts[h.id]=0));
+  keys.forEach(k=>{Object.keys(state[k]).forEach(hid=>{if(state[k][hid])counts[hid]=(counts[hid]||0)+1;});});
+  const td=keys.length||1;
+  document.getElementById("mainQuestContainer").innerHTML=`<div class="quest-card"><div class="quest-header"><div class="quest-name">${MAIN_QUEST.name}</div><div class="quest-badge">${MAIN_QUEST.badge}</div></div><div class="quest-desc">${MAIN_QUEST.desc}</div>${MAIN_QUEST.steps.map(s=>`<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--muted);font-family:'Share Tech Mono',monospace">${s.label}</span><span style="color:var(--gold);font-family:'Share Tech Mono',monospace">${s.pct}%</span></div><div style="background:#1a1a1a;height:4px;overflow:hidden"><div style="height:100%;width:${s.pct}%;background:linear-gradient(90deg,var(--gold-d),var(--gold))"></div></div></div>`).join("")}</div>`;
+  const sc=document.getElementById("sideQuestsContainer");sc.innerHTML="";
+  SIDE_QUESTS.forEach(q=>{
+    const total=q.habits.reduce((s,k)=>s+(counts[k]||0),0);
+    const pct=Math.min(100,Math.round(total/(q.habits.length*td)*100));
+    const d=document.createElement("div");d.className="quest-card secondary";
+    d.innerHTML=`<div class="quest-header"><div class="quest-name">${q.name}</div><div class="quest-badge">${q.badge}</div></div><div class="quest-desc">${q.desc}</div><div class="quest-progress-wrap"><div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div><div class="quest-pct" style="color:#5dade2">${pct}%</div></div>`;
+    sc.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// RENDER HISTORY
+// ══════════════════════════════════════════════════
+function renderHistory(){
+  const keys=Object.keys(state).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort((a,b)=>b.localeCompare(a)).slice(0,30);
+  const c=document.getElementById("historyContainer");
+  if(!keys.length){c.innerHTML=`<div style="color:var(--muted);font-style:italic;padding:20px;text-align:center;font-size:13px;">Commence à journaliser pour voir ton historique.</div>`;return;}
+  const maxXP=habits.reduce((s,cat)=>s+cat.items.reduce((a,h)=>a+h.xp,0),0);
+  c.innerHTML=keys.map(k=>{
+    const xp=dayXPRaw(state[k]||{}),pct=maxXP===0?0:Math.round(xp/maxXP*100);
+    const v=[...VERDICTS].reverse().find(v=>pct>=v.min)||VERDICTS[0];
+    const d=new Date(k);
+    const months=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+    return `<div class="history-row"><span class="history-date">${d.getDate()} ${months[d.getMonth()]}</span><span class="history-score" style="color:${v.color}">${v.grade}</span><div class="history-bar-mini"><div class="history-bar-fill" style="width:${pct}%"></div></div><span class="history-xp">+${dayXPTotal(state[k],k)} XP</span></div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════
+// LEVEL UP FLASH
+// ══════════════════════════════════════════════════
+function triggerLevelUp(level){
+  const r=REWARDS.find(x=>x.level===level);
+  document.getElementById("levelupReward").textContent=r?r.icon+" "+r.name:"";
+  document.getElementById("levelupSub").textContent="Niveau "+level+" — "+(LEVELS[level-1]?.title||"Légende")+" atteint"+(r?" · "+r.trait:"");
+  document.getElementById("levelupFlash").classList.add("show");
+}
+
+// ══════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════
+function switchTab(name){
+  const names=["objectifs","daily","defis","quests","stats","recompenses","history"];
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",names[i]===name));
+  document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id==="tab-"+name));
+}
+
+// ══════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════
+function renderAll(){
+  renderLevelBar(); renderObjectifs(); renderDaily();
+  renderDefis(); renderQuests(); renderStats(); renderRecompenses(); renderHistory();
+}
+
+// ══════════════════════════════════════════════════
+// ONBOARDING CHATBOT
+// ══════════════════════════════════════════════════
+const OB_QUESTIONS = [
+  "Salut. Je suis ton coach IA. Commençons par le commencement — décris-moi ta situation actuelle en quelques phrases. Où en es-tu dans ta vie en ce moment ?",
+  "Quels sont tes 3 objectifs principaux pour les 6 prochains mois ? Sois précis.",
+  "Qu'est-ce qui te bloque le plus en ce moment ? Tes plus grandes difficultés ?",
+  "Parle-moi de tes habitudes actuelles — ce que tu fais déjà et ce qui te manque.",
+  "Combien de temps peux-tu consacrer à tes habitudes chaque jour ? Et as-tu des contraintes particulières ?",
+];
+
+let obStep=0, obAnswers=[], isTyping=false;
+
+function addMsg(text, type){
+  const msgs=document.getElementById("chatMessages");
+  const div=document.createElement("div"); div.className="msg "+type; div.textContent=text;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addTyping(){
+  const msgs=document.getElementById("chatMessages");
+  const div=document.createElement("div"); div.className="msg bot typing"; div.id="typingMsg"; div.textContent="...";
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function removeTyping(){const t=document.getElementById("typingMsg");if(t)t.remove();}
+
+function obNext(){
+  if(obStep<OB_QUESTIONS.length){
+    setTimeout(()=>{addTyping();setTimeout(()=>{removeTyping();addMsg(OB_QUESTIONS[obStep],"bot");obStep++;document.getElementById("obStatus").textContent="Question "+obStep+" / "+OB_QUESTIONS.length;},800);},300);
+  } else {
+    addTyping();
+    setTimeout(()=>{removeTyping();addMsg("Parfait. J'ai tout ce qu'il me faut. Je génère ton profil RPG personnalisé...","bot");generateProfile();},800);
+  }
+}
+
+function sendUserMsg(){
+  if(isTyping)return;
+  const input=document.getElementById("chatInput");
+  const txt=input.value.trim(); if(!txt)return;
+  addMsg(txt,"user"); obAnswers.push(txt); input.value="";
+  obNext();
+}
+
+function handleKey(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendUserMsg();}}
+
+
+
+async function generateProfile(){
+  document.getElementById("obStatus").textContent="Génération en cours...";
+  isTyping=true;
+  try {
+    const res = await fetch("https://xfoanwiaryihmsqobgwg.supabase.co/functions/v1/dynamic-api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "onboarding",
+        payload: {
+          situation:     obAnswers[0] || "",
+          objectifs:     obAnswers[1] || "",
+          blocages:      obAnswers[2] || "",
+          habitudes:     obAnswers[3] || "",
+          disponibilite: obAnswers[4] || ""
+        }
+      })
+    });
+    const data = await res.json();
+    if(data.error){ throw new Error(data.error); }
+    const txt = data.result;
+    const jsonStr = txt.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+    const profile = JSON.parse(jsonStr);
+    applyGeneratedProfile(profile);
+    addMsg("Profil généré avec succès. Ton empire commence maintenant. Bonne chance, guerrier.","bot");
+    setTimeout(launchApp, 1800);
+  } catch(e) {
+    console.error(e);
+    addMsg("Erreur de génération : "+e.message+". Lancement en mode démo.","bot");
+    setTimeout(skipOnboarding, 1500);
+  }
+  isTyping=false;
+}
+
+function applyGeneratedProfile(profile){
+  state.profile=profile;
+  // Rebuild habits from profile
+  const cats={"Fondamentaux":[],"Corps & Énergie":[],"Business & Mission":[],"Esprit & Âme":[]};
+  (profile.habitudes||[]).forEach(h=>{if(cats[h.categorie])cats[h.categorie].push({id:h.id,icon:h.icon||"⚡",name:h.nom,xp:h.xp||15});});
+  habits=Object.keys(cats).filter(k=>cats[k].length>0).map(k=>({cat:k,items:cats[k]}));
+  state.habits=habits;
+  saveState();
+}
+
+function launchApp(){
+  document.getElementById("onboarding").classList.add("hidden");
+  document.getElementById("mainApp").style.display="block";
+  const p=state.profile;
+  if(p){
+    document.getElementById("appClassName").textContent="[ Classe : "+(p.classe||"Guerrier")+" ]";
+    document.getElementById("appCharName").textContent=(p.nom_perso||"GUERRIER").toUpperCase();
+    document.getElementById("appCharSubtitle").textContent=p.subtitle||"Bâtisseur d'Empire";
+    if(p.quetes_secondaires) SIDE_QUESTS.splice(0,SIDE_QUESTS.length,...p.quetes_secondaires.map(q=>({name:q.nom,badge:"QUÊTE SECONDAIRE",desc:q.description,habits:q.habits||[]})));
+    if(p.quete_principale) { MAIN_QUEST.name=p.quete_principale.nom; MAIN_QUEST.desc=p.quete_principale.description; }
+    if(p.traits) TRAITS_RPG.splice(0,TRAITS_RPG.length,...p.traits);
+  }
+  renderAll();
+}
+
+function skipOnboarding(){
+  habits=HABITS_DEFAULT;
+  document.getElementById("onboarding").classList.add("hidden");
+  document.getElementById("mainApp").style.display="block";
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+if(state.profile){habits=state.habits||HABITS_DEFAULT;}
+
+// Check if already onboarded
+// If already has profile, skip onboarding
+if(state.profile){
+  launchApp();
+} else {
+  setTimeout(()=>{
+    addMsg("Bienvenue guerrier. Je suis ton coach IA. Réponds à mes questions pour forger ton profil.","bot");
+    setTimeout(obNext, 800);
+  }, 400);
+}
+</script>
+</body>
+</html>
