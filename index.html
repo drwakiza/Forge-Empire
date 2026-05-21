@@ -1106,7 +1106,13 @@ function launchApp(){
     document.getElementById("appCharName").textContent=(p.nom_perso||"GUERRIER").toUpperCase();
     document.getElementById("appCharSubtitle").textContent=p.subtitle||"Bâtisseur d'Empire";
     if(p.quetes_secondaires) SIDE_QUESTS.splice(0,SIDE_QUESTS.length,...p.quetes_secondaires.map(q=>({name:q.nom,badge:"QUÊTE SECONDAIRE",desc:q.description,habits:q.habits||[]})));
-    if(p.quete_principale) { MAIN_QUEST.name=p.quete_principale.nom; MAIN_QUEST.desc=p.quete_principale.description; }
+    if(p.quete_principale) {
+      MAIN_QUEST.name=p.quete_principale.nom;
+      MAIN_QUEST.desc=p.quete_principale.description;
+      if(p.quete_principale.steps && p.quete_principale.steps.length > 0) {
+        MAIN_QUEST.steps = p.quete_principale.steps;
+      }
+    }
     if(p.traits) TRAITS_RPG.splice(0,TRAITS_RPG.length,...p.traits);
   }
   renderAll();
