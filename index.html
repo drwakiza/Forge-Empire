@@ -964,11 +964,12 @@ function renderAll(){
 // ONBOARDING CHATBOT
 // ══════════════════════════════════════════════════
 const OB_QUESTIONS = [
-  "Salut. Je suis ton coach IA. Commençons par le commencement — décris-moi ta situation actuelle en quelques phrases. Où en es-tu dans ta vie en ce moment ?",
-  "Quels sont tes 3 objectifs principaux pour les 6 prochains mois ? Sois précis.",
-  "Qu'est-ce qui te bloque le plus en ce moment ? Tes plus grandes difficultés ?",
-  "Parle-moi de tes habitudes actuelles — ce que tu fais déjà et ce qui te manque.",
-  "Combien de temps peux-tu consacrer à tes habitudes chaque jour ? Et as-tu des contraintes particulières ?",
+  "Bienvenue guerrier. Je suis ton coach IA. Avant de forger ton profil, j'ai besoin de te connaître vraiment.\n\nCommençons : quel âge as-tu, quelle est ta situation de vie actuelle (célibataire, en couple, enfants ?), et que fais-tu dans la vie professionnellement ?",
+  "Bien. Maintenant dis-moi — si dans 6 mois tu regardes en arrière et tu te dis 'j'ai réussi', qu'est-ce qui s'est passé exactement ? Décris ta vie idéale dans 6 mois de façon concrète : revenus, physique, relations, mental, quotidien.",
+  "Soyons honnêtes. Qu'est-ce qui t'a empêché d'atteindre ces objectifs jusqu'à présent ? Procrastination, manque de routine, substances, relations toxiques, peur, autre chose ? Sois brutal avec toi-même.",
+  "Décris ta semaine type actuelle : à quelle heure tu te lèves, est-ce que tu fais du sport (combien de fois), comment tu gères ton alimentation, est-ce que tu lis, médites, journalises ? Qu'est-ce que tu fais déjà bien ?",
+  "Sur le plan professionnel et financier : quels sont tes revenus actuels, ton objectif financier dans 6 mois, et quelle est ta plus grande action business que tu dois faire mais que tu évites ?",
+  "Dernière question : combien de temps par jour tu peux réellement consacrer à tes habitudes (sois réaliste, pas idéaliste) ? Et y a-t-il des contraintes importantes dans ta vie (garde d'enfant, déplacements, horaires atypiques) ?",
 ];
 
 let obStep=0, obAnswers=[], isTyping=false;
@@ -989,7 +990,7 @@ function removeTyping(){const t=document.getElementById("typingMsg");if(t)t.remo
 
 function obNext(){
   if(obStep<OB_QUESTIONS.length){
-    setTimeout(()=>{addTyping();setTimeout(()=>{removeTyping();addMsg(OB_QUESTIONS[obStep],"bot");obStep++;document.getElementById("obStatus").textContent="Question "+obStep+" / "+OB_QUESTIONS.length;},800);},300);
+    setTimeout(()=>{addTyping();setTimeout(()=>{removeTyping();addMsg(OB_QUESTIONS[obStep],"bot");obStep++;document.getElementById("obStatus").textContent="Question "+obStep+" / "+OB_QUESTIONS.length+" — Réponds honnêtement";},800);},300);
   } else {
     addTyping();
     setTimeout(()=>{removeTyping();addMsg("Parfait. J'ai tout ce qu'il me faut. Je génère ton profil RPG personnalisé...","bot");generateProfile();},800);
@@ -1018,11 +1019,12 @@ async function generateProfile(){
       body: JSON.stringify({
         type: "onboarding",
         payload: {
-          situation:     obAnswers[0] || "",
-          objectifs:     obAnswers[1] || "",
+          identite:      obAnswers[0] || "",
+          vision:        obAnswers[1] || "",
           blocages:      obAnswers[2] || "",
           habitudes:     obAnswers[3] || "",
-          disponibilite: obAnswers[4] || ""
+          business:      obAnswers[4] || "",
+          disponibilite: obAnswers[5] || ""
         }
       })
     });
