@@ -271,6 +271,7 @@ body{background:var(--bg);color:var(--text);font-family:"IM Fell English",serif;
     <div class="level-label">Expérience totale</div>
     <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
     <div class="xp-text" id="xpText">0 XP</div>
+  <div class="xp-text" id="streakText" style="color:var(--gold);margin-top:1px">🔥 0 jour de streak</div>
   </div>
   <div class="level-title" id="levelTitle">Aspirant</div>
 </div>
@@ -436,6 +437,10 @@ body{background:var(--bg);color:var(--text);font-family:"IM Fell English",serif;
     <div class="summary-bar-wrap"><div class="summary-bar-fill" id="summaryBarFill" style="width:0%"></div></div>
     <div class="day-grade" id="dayGrade">--</div>
     <div class="day-verdict" id="dayVerdict"></div>
+    <div id="coachMsgWrap" style="display:none;margin-top:12px;background:rgba(201,168,76,.08);border:1px solid var(--gold-d);padding:10px 13px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gold-d);margin-bottom:5px">MESSAGE DU COACH</div>
+      <div id="coachMsg" style="font-style:italic;font-size:12px;color:var(--text);line-height:1.6"></div>
+    </div>
   </div>
 </div>
 
@@ -654,6 +659,25 @@ function dayXPDefis(key) {
 }
 function dayXPTotal(dayData, key) { return dayXPCapped(dayData) + dayXPDefis(key); }
 
+function computeStreak() {
+  let streak = 0;
+  let d = new Date();
+  // Check today first, if not checked start from yesterday
+  const todayKey = d.toISOString().split('T')[0];
+  const todayData = state[todayKey];
+  const todayHasActivity = todayData && Object.values(todayData).some(v=>v===true);
+  if(!todayHasActivity) d.setDate(d.getDate()-1);
+  
+  for(let i=0; i<365; i++){
+    const key = d.toISOString().split('T')[0];
+    const data = state[key];
+    const hasActivity = data && Object.values(data).some(v=>v===true);
+    if(hasActivity){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
 function computeTotalXP() {
   let total=0;
   Object.keys(state).forEach(k=>{
@@ -799,6 +823,32 @@ function renderDaily(){
   document.getElementById("dayGrade").textContent=v.grade;
   document.getElementById("dayGrade").style.color=v.color;
   document.getElementById("dayVerdict").textContent=v.text;
+  // Show coach message if today and has XP
+  if(currentOffset===0 && dayXP > 0){
+    const wrap=document.getElementById("coachMsgWrap");
+    if(wrap) wrap.style.display="block";
+    fetchCoachMessage(pct, v.grade, dayXP, maxXP);
+  }
+}
+
+let lastCoachScore = -1;
+async function fetchCoachMessage(score, grade, xp, total){
+  if(score === lastCoachScore) return; // Don't re-fetch same score
+  lastCoachScore = score;
+  const profileClasse = state.profile?.classe || "Guerrier";
+  try {
+    const res = await fetch("https://xfoanwiaryihmsqobgwg.supabase.co/functions/v1/dynamic-api", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhmb2Fud2lhcnlpaG1zcW9iZ3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTc2NzgsImV4cCI6MjA5NDkzMzY3OH0.S-PTQbGilH551iRmtDDVKHSSNQDl6p1YJjmQFZ6_2lE"},
+      body:JSON.stringify({type:"checkin",payload:{score,grade,completed:Math.round(score/100*total),total,xp,classe:profileClasse}})
+    });
+    const data = await res.json();
+    if(data.result){
+      const parsed = JSON.parse(data.result);
+      const el = document.getElementById("coachMsg");
+      if(el && parsed.message) el.textContent = parsed.message;
+    }
+  } catch(e){ console.log("Coach msg error:", e); }
 }
 
 function toggleHabit(id){
@@ -886,6 +936,9 @@ function renderLevelBar(){
   document.getElementById("xpBarFill").style.width=info.pct+"%";
   const isMax=info.level===LEVELS.length;
   document.getElementById("xpText").textContent=isMax?xp+" XP — LÉGENDE":info.xpInLevel+" / "+info.xpForNext+" XP → "+info.nextTitle;
+  const streak=computeStreak();
+  const streakEl=document.getElementById("streakText");
+  if(streakEl) streakEl.textContent="🔥 "+streak+(streak>1?" jours de streak":" jour de streak");
   applyCharState(xp);
 }
 
@@ -1089,12 +1142,57 @@ async function generateProfile(){
 
 function applyGeneratedProfile(profile){
   state.profile=profile;
-  // Rebuild habits from profile
+  // Normalize category names — handle all variants Claude might return
+  const CAT_MAP = {
+    "fondamentaux": "Fondamentaux",
+    "corps": "Corps & Énergie",
+    "corps & énergie": "Corps & Énergie",
+    "corps &amp; énergie": "Corps & Énergie",
+    "corps et énergie": "Corps & Énergie",
+    "energy": "Corps & Énergie",
+    "business": "Business & Mission",
+    "business & mission": "Business & Mission",
+    "business &amp; mission": "Business & Mission",
+    "business et mission": "Business & Mission",
+    "mission": "Business & Mission",
+    "esprit": "Esprit & Âme",
+    "esprit & âme": "Esprit & Âme",
+    "esprit &amp; âme": "Esprit & Âme",
+    "esprit et âme": "Esprit & Âme",
+    "âme": "Esprit & Âme",
+    "ame": "Esprit & Âme",
+  };
   const cats={"Fondamentaux":[],"Corps & Énergie":[],"Business & Mission":[],"Esprit & Âme":[]};
-  (profile.habitudes||[]).forEach(h=>{if(cats[h.categorie])cats[h.categorie].push({id:h.id,icon:h.icon||"⚡",name:h.nom,xp:h.xp||15});});
-  habits=Object.keys(cats).filter(k=>cats[k].length>0).map(k=>({cat:k,items:cats[k]}));
-  state.habits=habits;
+  (profile.habitudes||[]).forEach(h=>{
+    // Normalize: lowercase, trim
+    const raw = (h.categorie||"").toLowerCase().trim();
+    const normalized = CAT_MAP[raw] || 
+      (raw.includes("fond") ? "Fondamentaux" :
+       raw.includes("corp") || raw.includes("energ") || raw.includes("éner") ? "Corps & Énergie" :
+       raw.includes("busi") || raw.includes("miss") ? "Business & Mission" :
+       raw.includes("espr") || raw.includes("âme") || raw.includes("ame") ? "Esprit & Âme" :
+       "Fondamentaux"); // fallback
+    if(cats[normalized]) cats[normalized].push({
+      id: h.id || "habit_"+Math.random().toString(36).substr(2,6),
+      icon: h.icon || "⚡",
+      name: h.nom || h.name || "Habitude",
+      xp: parseInt(h.xp) || 15
+    });
+  });
+  // Only include categories that have items
+  habits = Object.keys(cats).filter(k=>cats[k].length>0).map(k=>({cat:k,items:cats[k]}));
+  // Fallback: if nothing was categorized, put everything in Fondamentaux
+  if(habits.length === 0 && profile.habitudes && profile.habitudes.length > 0) {
+    habits = [{cat:"Fondamentaux", items: profile.habitudes.map(h=>({
+      id: h.id||"h"+Math.random().toString(36).substr(2,4),
+      icon: h.icon||"⚡",
+      name: h.nom||h.name||"Habitude",
+      xp: parseInt(h.xp)||15
+    }))}];
+  }
+  state.habits = habits;
   saveState();
+  console.log("Profile applied:", habits.length, "categories,", habits.reduce((s,c)=>s+c.items.length,0), "habits");
 }
 
 function launchApp(){
@@ -1128,7 +1226,20 @@ function skipOnboarding(){
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
-if(state.profile){habits=state.habits||HABITS_DEFAULT;}
+// Load habits from state on page reload
+if(state.profile && state.habits && state.habits.length > 0){
+  // Validate that loaded habits have the right structure
+  const valid = state.habits.every(cat => cat.cat && Array.isArray(cat.items) && cat.items.length > 0);
+  if(valid){
+    habits = state.habits;
+  } else {
+    // Re-apply from profile if structure is invalid
+    if(state.profile.habitudes) applyGeneratedProfile(state.profile);
+    else habits = HABITS_DEFAULT;
+  }
+} else if(state.profile) {
+  habits = HABITS_DEFAULT;
+}
 
 // Check if already onboarded
 // If already has profile, skip onboarding
