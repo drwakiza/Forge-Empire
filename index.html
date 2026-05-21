@@ -1028,9 +1028,15 @@ async function generateProfile(){
     });
     const data = await res.json();
     if(data.error){ throw new Error(data.error); }
-    const txt = data.result;
-    const jsonStr = txt.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
-    const profile = JSON.parse(jsonStr);
+    const txt = data.result || data.content?.[0]?.text || "";
+    if(!txt) throw new Error("Réponse vide de l'IA");
+    const jsonStr = txt
+      .replace(/```json\n?/g,"")
+      .replace(/```\n?/g,"")
+      .trim();
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error("JSON invalide reçu");
+    const profile = JSON.parse(jsonMatch[0]);
     applyGeneratedProfile(profile);
     addMsg("Profil généré avec succès. Ton empire commence maintenant. Bonne chance, guerrier.","bot");
     setTimeout(launchApp, 1800);
